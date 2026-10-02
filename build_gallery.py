@@ -40,6 +40,12 @@ for group_key, data in projects.items():
     items.sort(key=lambda x: not (x.lower().endswith('.mp4') or x.lower().endswith('.mov')))
     
     cover_item = items[0]
+    
+    if "tiburon" in group_key.lower():
+        for item in items:
+            if "render4" in item.lower():
+                cover_item = item
+                break
             
     cat_id = "all"
     subtitle = "Proyecto 3D"
