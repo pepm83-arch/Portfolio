@@ -2,10 +2,10 @@ import os
 import glob
 import json
 
-base_dir = r"C:\Users\Josep\.gemini\antigravity\scratch\portfolio_3d"
+base_dir = r"C:\Users\Josep\Documents\GitHub\Portfolio"
 html_file = os.path.join(base_dir, "index.html")
 
-extensions = ('*.png', '*.jpg', '*.jpeg', '*.mp4')
+extensions = ('*.png', '*.jpg', '*.jpeg', '*.mp4', '*.mov')
 files = []
 for ext in extensions:
     files.extend(glob.glob(os.path.join(base_dir, '**', ext), recursive=True))
@@ -36,8 +36,8 @@ for group_key, data in projects.items():
     project_name = data["name"]
     items = data["items"]
     
-    # Ordenar para que los .mp4 sean los primeros (portada y primer archivo en el modal)
-    items.sort(key=lambda x: not x.endswith('.mp4'))
+    # Ordenar para que los .mp4 y .mov sean los primeros
+    items.sort(key=lambda x: not (x.lower().endswith('.mp4') or x.lower().endswith('.mov')))
     
     cover_item = items[0]
             
@@ -70,8 +70,9 @@ for group_key, data in projects.items():
 
     items_json = json.dumps(items)
     
-    if cover_item.endswith('.mp4'):
-        media_html = f'<video autoplay loop muted playsinline class="w-full h-auto"><source src="{cover_item}" type="video/mp4"></video>'
+    is_video = cover_item.lower().endswith(('.mp4', '.mov'))
+    if is_video:
+        media_html = f'<video autoplay loop muted playsinline class="w-full h-auto"><source src="{cover_item}"></video>'
     else:
         media_html = f'<img loading="lazy" src="{cover_item}" alt="{project_name}" class="w-full h-auto object-cover">'
         
@@ -125,7 +126,7 @@ html_template = f"""<!DOCTYPE html>
 </head>
 <body class="antialiased">
 
-    <!-- Modal -->
+    <!-- Modal para ver proyecto completo -->
     <div id="project-modal" class="fixed inset-0 z-[100] bg-black/95 hidden flex flex-col">
         <div class="flex justify-between items-center p-6 border-b border-gray-800">
             <h2 id="modal-title" class="text-2xl font-bold text-white uppercase tracking-wider">Proyecto</h2>
@@ -139,7 +140,7 @@ html_template = f"""<!DOCTYPE html>
         </div>
     </div>
 
-    <!-- Nav -->
+    <!-- Navbar -->
     <nav class="fixed w-full z-50 bg-white/90 backdrop-blur-md border-b border-gray-200">
         <div class="max-w-screen-2xl mx-auto px-6 lg:px-12">
             <div class="flex items-center justify-between h-20">
@@ -195,7 +196,6 @@ html_template = f"""<!DOCTYPE html>
         </div>
     </section>
 
-    <!-- CV Section -->
     <section id="cv" class="bg-black text-white py-24">
         <div class="max-w-screen-2xl mx-auto px-6 lg:px-12">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-16">
@@ -242,76 +242,76 @@ html_template = f"""<!DOCTYPE html>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <footer id="contacto" class="bg-[#f9f9f9] py-32 text-center">
-        <h2 class="text-5xl md:text-7xl font-black tracking-tighter mb-8">¿TRABAJAMOS JUNTOS?</h2>
-        <a href="mailto:Pepm83@gmail.com" class="text-2xl md:text-4xl font-light hover:text-blue-600 transition-colors border-b-2 border-black hover:border-blue-600 pb-2">
-            Pepm83@gmail.com
-        </a>
-        <div class="mt-20 flex justify-center gap-8 text-3xl">
-            <a href="https://monfosc.com/" class="text-gray-400 hover:text-black transition-colors"><i class="fa-solid fa-globe"></i></a>
-            <a href="https://cults3d.com/es/usuarios/Monfosc_Studio/modelos-3d" class="text-gray-400 hover:text-black transition-colors"><i class="fa-solid fa-cube"></i></a>
-            <a href="https://www.artstation.com/pepm83" class="text-gray-400 hover:text-black transition-colors"><i class="fa-brands fa-artstation"></i></a>
-        </div>
-        <p class="mt-12 text-gray-500 text-sm">© 2026 José Miguel M. | Monfosc Studio</p>
-    </footer>
+        <footer id="contacto" class="bg-[#f9f9f9] py-32 text-center">
+            <h2 class="text-5xl md:text-7xl font-black tracking-tighter mb-8">¿TRABAJAMOS JUNTOS?</h2>
+            <a href="mailto:Pepm83@gmail.com" class="text-2xl md:text-4xl font-light hover:text-blue-600 transition-colors border-b-2 border-black hover:border-blue-600 pb-2">
+                Pepm83@gmail.com
+            </a>
+            <div class="mt-20 flex justify-center gap-8 text-3xl">
+                <a href="https://monfosc.com/" class="text-gray-400 hover:text-black transition-colors"><i class="fa-solid fa-globe"></i></a>
+                <a href="https://cults3d.com/es/usuarios/Monfosc_Studio/modelos-3d" class="text-gray-400 hover:text-black transition-colors"><i class="fa-solid fa-cube"></i></a>
+                <a href="https://www.artstation.com/pepm83" class="text-gray-400 hover:text-black transition-colors"><i class="fa-brands fa-artstation"></i></a>
+            </div>
+            <p class="mt-12 text-gray-500 text-sm">© 2026 José Miguel M. | Monfosc Studio</p>
+        </footer>
 
-    <script>
-        function openModal(images, title) {{
-            const modal = document.getElementById('project-modal');
-            const gallery = document.getElementById('modal-gallery');
-            document.getElementById('modal-title').innerText = title;
+        <script>
+            function openModal(images, title) {{
+                const modal = document.getElementById('project-modal');
+                const gallery = document.getElementById('modal-gallery');
+                document.getElementById('modal-title').innerText = title;
+                
+                gallery.innerHTML = '';
+                images.forEach(src => {{
+                    const lowerSrc = src.toLowerCase();
+                    if(lowerSrc.endsWith('.mp4') || lowerSrc.endsWith('.mov')) {{
+                        gallery.innerHTML += `<video controls autoplay loop muted playsinline class="w-full max-w-4xl rounded-lg shadow-2xl mb-4"><source src="${{src}}"></video>`;
+                    }} else {{
+                        gallery.innerHTML += `<img src="${{src}}" class="w-full max-w-4xl rounded-lg shadow-2xl mb-4">`;
+                    }}
+                }});
+                
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }}
             
-            gallery.innerHTML = '';
-            images.forEach(src => {{
-                if(src.endsWith('.mp4')) {{
-                    gallery.innerHTML += `<video controls autoplay loop muted playsinline class="w-full max-w-4xl rounded-lg shadow-2xl mb-4"><source src="${{src}}" type="video/mp4"></video>`;
-                }} else {{
-                    gallery.innerHTML += `<img src="${{src}}" class="w-full max-w-4xl rounded-lg shadow-2xl mb-4">`;
-                }}
-            }});
-            
-            modal.classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-        }}
-        
-        function closeModal() {{
-            document.getElementById('project-modal').classList.add('hidden');
-            document.getElementById('modal-gallery').innerHTML = ''; 
-            document.body.style.overflow = 'auto';
-        }}
+            function closeModal() {{
+                document.getElementById('project-modal').classList.add('hidden');
+                document.getElementById('modal-gallery').innerHTML = ''; 
+                document.body.style.overflow = 'auto';
+            }}
 
-        document.addEventListener('DOMContentLoaded', () => {{
-            const filterBtns = document.querySelectorAll('.filter-btn');
-            const items = document.querySelectorAll('.masonry-item');
+            document.addEventListener('DOMContentLoaded', () => {{
+                const filterBtns = document.querySelectorAll('.filter-btn');
+                const items = document.querySelectorAll('.masonry-item');
 
-            filterBtns.forEach(btn => {{
-                btn.addEventListener('click', () => {{
-                    filterBtns.forEach(b => {{
-                        b.classList.remove('active', 'bg-black', 'text-white');
-                        b.classList.add('bg-white', 'text-black');
-                    }});
-                    
-                    btn.classList.remove('bg-white', 'text-black');
-                    btn.classList.add('active', 'bg-black', 'text-white');
+                filterBtns.forEach(btn => {{
+                    btn.addEventListener('click', () => {{
+                        filterBtns.forEach(b => {{
+                            b.classList.remove('active', 'bg-black', 'text-white');
+                            b.classList.add('bg-white', 'text-black');
+                        }});
+                        
+                        btn.classList.remove('bg-white', 'text-black');
+                        btn.classList.add('active', 'bg-black', 'text-white');
 
-                    const filter = btn.getAttribute('data-filter');
+                        const filter = btn.getAttribute('data-filter');
 
-                    items.forEach(item => {{
-                        if (filter === 'all' || item.getAttribute('data-category') === filter) {{
-                            item.style.display = 'block';
-                        }} else {{
-                            item.style.display = 'none';
-                        }}
+                        items.forEach(item => {{
+                            if (filter === 'all' || item.getAttribute('data-category') === filter) {{
+                                item.style.display = 'block';
+                            }} else {{
+                                item.style.display = 'none';
+                            }}
+                        }});
                     }});
                 }});
             }});
-        }});
-    </script>
-</body>
-</html>
+        </script>
+    </body>
+    </html>
 """
 
 with open(html_file, 'w', encoding='utf-8') as f:
