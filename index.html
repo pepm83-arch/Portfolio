@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>José Miguel Martínez | Monfosc Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f9f9f9; color: #111; }
+        
+        .masonry-grid { column-count: 1; column-gap: 1.5rem; }
+        @media (min-width: 640px) { .masonry-grid { column-count: 2; } }
+        @media (min-width: 1024px) { .masonry-grid { column-count: 3; } }
+        @media (min-width: 1536px) { .masonry-grid { column-count: 4; } }
+        
+        .masonry-item {
+            break-inside: avoid; margin-bottom: 1.5rem; position: relative; border-radius: 8px; overflow: hidden;
+            background: #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .masonry-item:hover { transform: translateY(-5px); box-shadow: 0 10px 15px rgba(0,0,0,0.1); }
+        
+        .overlay {
+            position: absolute; inset: 0; background: rgba(0,0,0,0.7); color: white; opacity: 0;
+            display: flex; align-items: center; justify-content: center; flex-direction: column; transition: opacity 0.3s ease;
+        }
+        .masonry-item:hover .overlay { opacity: 1; }
+        .filter-btn.active { background-color: #111; color: #fff; }
+
+        #modal-gallery-container::-webkit-scrollbar { width: 8px; }
+        #modal-gallery-container::-webkit-scrollbar-track { background: #111; }
+        #modal-gallery-container::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Modal -->
+    <div id="project-modal" class="fixed inset-0 z-[100] bg-black/95 hidden flex flex-col">
+        <div class="flex justify-between items-center p-6 border-b border-gray-800">
+            <h2 id="modal-title" class="text-2xl font-bold text-white uppercase tracking-wider">Proyecto</h2>
+            <button onclick="closeModal()" class="text-gray-400 hover:text-white transition-colors">
+                <i class="fa-solid fa-xmark text-3xl"></i>
+            </button>
+        </div>
+        <div id="modal-gallery-container" class="flex-1 overflow-y-auto p-6 md:p-12">
+            <div id="modal-gallery" class="max-w-5xl mx-auto space-y-8 flex flex-col items-center">
+            </div>
+        </div>
+    </div>
+
+    <!-- Nav -->
+    <nav class="fixed w-full z-50 bg-white/90 backdrop-blur-md border-b border-gray-200">
+        <div class="max-w-screen-2xl mx-auto px-6 lg:px-12">
+            <div class="flex items-center justify-between h-20">
+                <div class="font-black text-2xl tracking-tighter uppercase flex items-center gap-2">
+                    <i class="fa-solid fa-cube text-black"></i> MONFOSC<span class="text-gray-400 font-light">STUDIO</span>
+                </div>
+                <div class="hidden md:flex items-center space-x-8 font-semibold text-sm">
+                    <a href="#portfolio" class="hover:text-blue-600 transition-colors">PORTFOLIO</a>
+                    <a href="#cv" class="hover:text-blue-600 transition-colors">SOBRE MÍ & CV</a>
+                    <a href="https://monfosc.com/" target="_blank" class="hover:text-blue-600 transition-colors">WEB OFICIAL</a>
+                    <a href="https://cults3d.com/es/usuarios/Monfosc_Studio/modelos-3d" target="_blank" class="bg-blue-600 text-white px-5 py-2.5 rounded-full hover:bg-blue-700 transition-colors">
+                        TIENDA CULTS3D
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <header class="pt-40 pb-20 px-6 lg:px-12 max-w-screen-2xl mx-auto">
+        <div class="max-w-4xl">
+            <h1 class="text-6xl md:text-8xl font-black tracking-tighter leading-[0.9] mb-8">
+                JOSÉ MIGUEL. <br>
+                <span class="text-gray-400">3D ARTIST &</span> <br>
+                <span class="text-blue-600">MODELER.</span>
+            </h1>
+            <p class="text-xl md:text-2xl text-gray-600 font-light max-w-2xl mb-10 leading-relaxed">
+                Especialista en modelado 3D, diseño de props, escenarios y monumentos falleros. Fundador de <strong>Monfosc Studio</strong>.
+            </p>
+            <div class="flex flex-wrap gap-4">
+                <a href="#portfolio" class="bg-black text-white px-8 py-4 rounded-full font-bold hover:bg-gray-800 transition-colors text-lg">Ver 15 Proyectos</a>
+                <a href="#contacto" class="border-2 border-black text-black px-8 py-4 rounded-full font-bold hover:bg-gray-100 transition-colors text-lg">Contactar</a>
+            </div>
+        </div>
+    </header>
+
+    <section id="portfolio" class="px-6 lg:px-12 max-w-screen-2xl mx-auto mb-8">
+        <div class="flex flex-wrap gap-3 border-b border-gray-200 pb-6">
+            <button class="filter-btn active px-6 py-2 rounded-full border border-gray-300 font-medium text-sm transition-colors" data-filter="all">Todos (15)</button>
+            <button class="filter-btn bg-white text-black hover:bg-gray-100 px-6 py-2 rounded-full border border-gray-300 font-medium text-sm transition-colors" data-filter="figuras">Figuras</button>
+            <button class="filter-btn bg-white text-black hover:bg-gray-100 px-6 py-2 rounded-full border border-gray-300 font-medium text-sm transition-colors" data-filter="fallas">Fallas</button>
+            <button class="filter-btn bg-white text-black hover:bg-gray-100 px-6 py-2 rounded-full border border-gray-300 font-medium text-sm transition-colors" data-filter="props">Props</button>
+            <button class="filter-btn bg-white text-black hover:bg-gray-100 px-6 py-2 rounded-full border border-gray-300 font-medium text-sm transition-colors" data-filter="entornos">Entornos</button>
+            <button class="filter-btn bg-white text-black hover:bg-gray-100 px-6 py-2 rounded-full border border-gray-300 font-medium text-sm transition-colors" data-filter="animacion">Animación</button>
+            <button class="filter-btn bg-white text-black hover:bg-gray-100 px-6 py-2 rounded-full border border-gray-300 font-medium text-sm transition-colors" data-filter="concept">Concept Art</button>
+            <button class="filter-btn bg-white text-black hover:bg-gray-100 px-6 py-2 rounded-full border border-gray-300 font-medium text-sm transition-colors" data-filter="motion">Motion</button>
+        </div>
+    </section>
+
+    <section class="px-6 lg:px-12 max-w-screen-2xl mx-auto mb-24">
+        <div class="masonry-grid" id="gallery">
+            
+    <div class="masonry-item animacion cursor-pointer" data-category="animacion" onclick='openModal(["Animacion/Nave/Nave.mp4", "Animacion/Nave/Nave (2).png", "Animacion/Nave/Nave (3).png", "Animacion/Nave/Nave (4).png", "Animacion/Nave/Nave (5).png", "Animacion/Nave/Nave (6).png", "Animacion/Nave/Nave.png"], "Nave")'>
+        <video autoplay loop muted playsinline class="w-full h-auto"><source src="Animacion/Nave/Nave.mp4" type="video/mp4"></video>
+        <div class="overlay">
+            <h3 class="text-xl font-bold text-center px-2">Nave</h3>
+            <p class="mt-2 text-sm text-gray-300">Animación</p>
+            <div class="mt-4 border border-white px-4 py-1 rounded-full text-xs font-bold bg-white/20 backdrop-blur-sm">
+                Ver 7 archivos
+            </div>
+        </div>
+    </div>
+    
+    <div class="masonry-item concept cursor-pointer" data-category="concept" onclick='openModal(["Concept_art/Carlitos/Curso_RTVE.mp4", "Concept_art/Carlitos/Modelado3D.png", "Concept_art/Carlitos/Modelado3D._perfil.png", "Concept_art/Carlitos/Modelado3D_3cuartos.png", "Concept_art/Carlitos/RENDER7.png", "Concept_art/Carlitos/RENDER8.png", "Concept_art/Carlitos/RENDER9.png", "Concept_art/Carlitos/RIGG.png", "Concept_art/Carlitos/RIGG_HUESOS.png", "Concept_art/Carlitos/RIGG_HUESOS_PERFIL.png", "Concept_art/Carlitos/RIGG_PERFIL.png"], "Carlitos")'>
+        <video autoplay loop muted playsinline class="w-full h-auto"><source src="Concept_art/Carlitos/Curso_RTVE.mp4" type="video/mp4"></video>
+        <div class="overlay">
+            <h3 class="text-xl font-bold text-center px-2">Carlitos</h3>
+            <p class="mt-2 text-sm text-gray-300">Concept Art</p>
+            <div class="mt-4 border border-white px-4 py-1 rounded-full text-xs font-bold bg-white/20 backdrop-blur-sm">
+                Ver 11 archivos
+            </div>
+        </div>
+    </div>
+    
+    <div class="masonry-item concept cursor-pointer" data-category="concept" onclick='openModal(["Concept_art/ella_tb_juega/Ella_tb_fue_ni\u00f1a.png", "Concept_art/ella_tb_juega/Ella_tb_fue_ni\u00f1a1.png"], "Ella Tb Juega")'>
+        <img loading="lazy" src="Concept_art/ella_tb_juega/Ella_tb_fue_niña.png" alt="Ella Tb Juega" class="w-full h-auto object-cover">
+        <div class="overlay">
+            <h3 class="text-xl font-bold text-center px-2">Ella Tb Juega</h3>
+            <p class="mt-2 text-sm text-gray-300">Concept Art</p>
+            <div class="mt-4 border border-white px-4 py-1 rounded-full text-xs font-bold bg-white/20 backdrop-blur-sm">
+                Ver 2 archivos
+            </div>
+        </div>
+    </div>
+    
+    <div class="masonry-item entornos cursor-pointer" data-category="entornos" onclick='openModal(["Envoirment/Habitacion/0001.png", "Envoirment/Habitacion/0002.png", "Envoirment/Habitacion/0003.png", "Envoirment/Habitacion/0004.png", "Envoirment/Habitacion/0005.png", "Envoirment/Habitacion/0006.png", "Envoirment/Habitacion/0007.png", "Envoirment/Habitacion/0008.png", "Envoirment/Habitacion/0009.png", "Envoirment/Habitacion/0010.png", "Envoirment/Habitacion/0011.png", "Envoirment/Habitacion/0012.png", "Envoirment/Habitacion/0013.png", "Envoirment/Habitacion/0014.png", "Envoirment/Habitacion/0015.png", "Envoirment/Habitacion/0016.png", "Envoirment/Habitacion/0017.png", "Envoirment/Habitacion/0018.png", "Envoirment/Habitacion/0019.png", "Envoirment/Habitacion/0020.png"], "Habitacion")'>
+        <img loading="lazy" src="Envoirment/Habitacion/0001.png" alt="Habitacion" class="w-full h-auto object-cover">
+        <div class="overlay">
+            <h3 class="text-xl font-bold text-center px-2">Habitacion</h3>
+            <p class="mt-2 text-sm text-gray-300">Entornos y Escenarios</p>
+            <div class="mt-4 border border-white px-4 py-1 rounded-full text-xs font-bold bg-white/20 backdrop-blur-sm">
+                Ver 20 archivos
+            </div>
+        </div>
+    </div>
+    
+    <div class="masonry-item figuras cursor-pointer" data-category="figuras" onclick='openModal(["Esculpido/Figuras/bad taste/3.png", "Esculpido/Figuras/bad taste/bad_taste.png", "Esculpido/Figuras/bad taste/bad_taste1.png", "Esculpido/Figuras/bad taste/bad_taste2.png", "Esculpido/Figuras/bad taste/bad_taste3.png", "Esculpido/Figuras/bad taste/bad_taste4.png", "Esculpido/Figuras/bad taste/bad_taste5.png", "Esculpido/Figuras/bad taste/baadTaste_art.jpg"], "Bad Taste")'>
+        <img loading="lazy" src="Esculpido/Figuras/bad taste/3.png" alt="Bad Taste" class="w-full h-auto object-cover">
+        <div class="overlay">
+            <h3 class="text-xl font-bold text-center px-2">Bad Taste</h3>
+            <p class="mt-2 text-sm text-gray-300">Escultura / Figuras</p>
+            <div class="mt-4 border border-white px-4 py-1 rounded-full text-xs font-bold bg-white/20 backdrop-blur-sm">
+                Ver 8 archivos
+            </div>
+        </div>
+    </div>
+    
+    <div class="masonry-item figuras cursor-pointer" data-category="figuras" onclick='openModal(["Esculpido/Figuras/Caracterizacion/Render1.png", "Esculpido/Figuras/Caracterizacion/Render2.png", "Esculpido/Figuras/Caracterizacion/Render3.png"], "Caracterizacion")'>
+        <img loading="lazy" src="Esculpido/Figuras/Caracterizacion/Render1.png" alt="Caracterizacion" class="w-full h-auto object-cover">
+        <div class="overlay">
+            <h3 class="text-xl font-bold text-center px-2">Caracterizacion</h3>
+            <p class="mt-2 text-sm text-gray-300">Escultura / Figuras</p>
+            <div class="mt-4 border border-white px-4 py-1 rounded-full text-xs font-bold bg-white/20 backdrop-blur-sm">
+                Ver 3 archivos
+            </div>
+        </div>
+    </div>
+    
+    <div class="masonry-item figuras cursor-pointer" data-category="figuras" onclick='openModal(["Esculpido/Figuras/Piranha/Pira\u00f1a_1978_JoeDante.mp4", "Esculpido/Figuras/Piranha/Pira\u00f1a_1978_JoeDante (2).png", "Esculpido/Figuras/Piranha/Pira\u00f1a_1978_JoeDante.png", "Esculpido/Figuras/Piranha/render_Pira\u00f1a.png", "Esculpido/Figuras/Piranha/render_Pira\u00f1a1.png", "Esculpido/Figuras/Piranha/render_Pira\u00f1a2.png", "Esculpido/Figuras/Piranha/render_Pira\u00f1a3.png", "Esculpido/Figuras/Piranha/render_Pira\u00f1a4.png", "Esculpido/Figuras/Piranha/render_Pira\u00f1a_.png"], "Piranha")'>
+        <video autoplay loop muted playsinline class="w-full h-auto"><source src="Esculpido/Figuras/Piranha/Piraña_1978_JoeDante.mp4" type="video/mp4"></video>
+        <div class="overlay">
+            <h3 class="text-xl font-bold text-center px-2">Piranha</h3>
+            <p class="mt-2 text-sm text-gray-300">Escultura / Figuras</p>
+            <div class="mt-4 border border-white px-4 py-1 rounded-full text-xs font-bold bg-white/20 backdrop-blur-sm">
+                Ver 9 archivos
+            </div>
+        </div>
+    </div>
+    
+    <div class="masonry-item figuras cursor-pointer" data-category="figuras" onclick='openModal(["Esculpido/Figuras/Sloth/sloth_.png", "Esculpido/Figuras/Sloth/sloth_1.png", "Esculpido/Figuras/Sloth/sloth_2.png", "Esculpido/Figuras/Sloth/sloth_3.png", "Esculpido/Figuras/Sloth/sloth_5.png"], "Sloth")'>
+        <img loading="lazy" src="Esculpido/Figuras/Sloth/sloth_.png" alt="Sloth" class="w-full h-auto object-cover">
+        <div class="overlay">
+            <h3 class="text-xl font-bold text-center px-2">Sloth</h3>
+            <p class="mt-2 text-sm text-gray-300">Escultura / Figuras</p>
+            <div class="mt-4 border border-white px-4 py-1 rounded-full text-xs font-bold bg-white/20 backdrop-blur-sm">
+                Ver 5 archivos
+            </div>
+        </div>
+    </div>
+    
+    <div class="masonry-item fallas cursor-pointer" data-category="fallas" onclick='openModal(["Esculpido/Monumentos_Falleros/DE_Bolquers/Bolquers.png", "Esculpido/Monumentos_Falleros/DE_Bolquers/Bolquers0.png", "Esculpido/Monumentos_Falleros/DE_Bolquers/Bolquers1.png", "Esculpido/Monumentos_Falleros/DE_Bolquers/Bolquers2.png", "Esculpido/Monumentos_Falleros/DE_Bolquers/Bolquers3.png", "Esculpido/Monumentos_Falleros/DE_Bolquers/Bolquers4.png", "Esculpido/Monumentos_Falleros/DE_Bolquers/Bolquers5.png"], "De Bolquers")'>
+        <img loading="lazy" src="Esculpido/Monumentos_Falleros/DE_Bolquers/Bolquers.png" alt="De Bolquers" class="w-full h-auto object-cover">
+        <div class="overlay">
+            <h3 class="text-xl font-bold text-center px-2">De Bolquers</h3>
+            <p class="mt-2 text-sm text-gray-300">Monumento Fallero</p>
+            <div class="mt-4 border border-white px-4 py-1 rounded-full text-xs font-bold bg-white/20 backdrop-blur-sm">
+                Ver 7 archivos
+            </div>
+        </div>
+    </div>
+    
+    <div class="masonry-item fallas cursor-pointer" data-category="fallas" onclick='openModal(["Esculpido/Monumentos_Falleros/Emocions/__Emocions1.png", "Esculpido/Monumentos_Falleros/Emocions/__Emocions2.png", "Esculpido/Monumentos_Falleros/Emocions/__Emocions3.png", "Esculpido/Monumentos_Falleros/Emocions/__Emocions4.png", "Esculpido/Monumentos_Falleros/Emocions/__Emocions5.png", "Esculpido/Monumentos_Falleros/Emocions/__Emocions6.png", "Esculpido/Monumentos_Falleros/Emocions/__Emocions7.png"], "Emocions")'>
+        <img loading="lazy" src="Esculpido/Monumentos_Falleros/Emocions/__Emocions1.png" alt="Emocions" class="w-full h-auto object-cover">
+        <div class="overlay">
+            <h3 class="text-xl font-bold text-center px-2">Emocions</h3>
+            <p class="mt-2 text-sm text-gray-300">Monumento Fallero</p>
+            <div class="mt-4 border border-white px-4 py-1 rounded-full text-xs font-bold bg-white/20 backdrop-blur-sm">
+                Ver 7 archivos
+            </div>
+        </div>
+    </div>
+    
+    <div class="masonry-item fallas cursor-pointer" data-category="fallas" onclick='openModal(["Esculpido/Monumentos_Falleros/Esta_Viu/Estaviu_1.png", "Esculpido/Monumentos_Falleros/Esta_Viu/Estaviu_10.png", "Esculpido/Monumentos_Falleros/Esta_Viu/Estaviu_11.png", "Esculpido/Monumentos_Falleros/Esta_Viu/Estaviu_2.png", "Esculpido/Monumentos_Falleros/Esta_Viu/Estaviu_3.png", "Esculpido/Monumentos_Falleros/Esta_Viu/Estaviu_4.png", "Esculpido/Monumentos_Falleros/Esta_Viu/Estaviu_5.png", "Esculpido/Monumentos_Falleros/Esta_Viu/Estaviu_6.png", "Esculpido/Monumentos_Falleros/Esta_Viu/Estaviu_7.png", "Esculpido/Monumentos_Falleros/Esta_Viu/Estaviu_8.png", "Esculpido/Monumentos_Falleros/Esta_Viu/Estaviu_9.png"], "Esta Viu")'>
+        <img loading="lazy" src="Esculpido/Monumentos_Falleros/Esta_Viu/Estaviu_1.png" alt="Esta Viu" class="w-full h-auto object-cover">
+        <div class="overlay">
+            <h3 class="text-xl font-bold text-center px-2">Esta Viu</h3>
+            <p class="mt-2 text-sm text-gray-300">Monumento Fallero</p>
+            <div class="mt-4 border border-white px-4 py-1 rounded-full text-xs font-bold bg-white/20 backdrop-blur-sm">
+                Ver 11 archivos
+            </div>
+        </div>
+    </div>
+    
+    <div class="masonry-item figuras cursor-pointer" data-category="figuras" onclick='openModal(["Esculpido/Tiburon/render1.png", "Esculpido/Tiburon/render2.png", "Esculpido/Tiburon/render3.png", "Esculpido/Tiburon/render4.png", "Esculpido/Tiburon/tiburon_render0.png"], "Tiburon")'>
+        <img loading="lazy" src="Esculpido/Tiburon/render1.png" alt="Tiburon" class="w-full h-auto object-cover">
+        <div class="overlay">
+            <h3 class="text-xl font-bold text-center px-2">Tiburon</h3>
+            <p class="mt-2 text-sm text-gray-300">Escultura / Figuras</p>
+            <div class="mt-4 border border-white px-4 py-1 rounded-full text-xs font-bold bg-white/20 backdrop-blur-sm">
+                Ver 5 archivos
+            </div>
+        </div>
+    </div>
+    
+    <div class="masonry-item props cursor-pointer" data-category="props" onclick='openModal(["Props_stopmotion/casa_inicio.png", "Props_stopmotion/guarida_lobo.png", "Props_stopmotion/hallowen.png", "Props_stopmotion/juguetes1_render.png", "Props_stopmotion/laboratorio.png", "Props_stopmotion/laboratorio1.png", "Props_stopmotion/menu.png", "Props_stopmotion/menu1.png", "Props_stopmotion/menu2.png", "Props_stopmotion/menu3.png", "Props_stopmotion/menu4.png", "Props_stopmotion/palanca_regadera.png", "Props_stopmotion/taller.png", "Props_stopmotion/TELAR.png", "Props_stopmotion/TRINEO.png", "Props_stopmotion/vampiro.png"], "Colección de Props")'>
+        <img loading="lazy" src="Props_stopmotion/casa_inicio.png" alt="Colección de Props" class="w-full h-auto object-cover">
+        <div class="overlay">
+            <h3 class="text-xl font-bold text-center px-2">Colección de Props</h3>
+            <p class="mt-2 text-sm text-gray-300">Props Stop Motion</p>
+            <div class="mt-4 border border-white px-4 py-1 rounded-full text-xs font-bold bg-white/20 backdrop-blur-sm">
+                Ver 16 archivos
+            </div>
+        </div>
+    </div>
+    
+    <div class="masonry-item motion cursor-pointer" data-category="motion" onclick='openModal(["Motion_Graphics/cerebro_cule.mp4"], "Cerebro Cule")'>
+        <video autoplay loop muted playsinline class="w-full h-auto"><source src="Motion_Graphics/cerebro_cule.mp4" type="video/mp4"></video>
+        <div class="overlay">
+            <h3 class="text-xl font-bold text-center px-2">Cerebro Cule</h3>
+            <p class="mt-2 text-sm text-gray-300">Motion Graphics</p>
+            <div class="mt-4 border border-white px-4 py-1 rounded-full text-xs font-bold bg-white/20 backdrop-blur-sm">
+                Ver 1 archivos
+            </div>
+        </div>
+    </div>
+    
+    <div class="masonry-item motion cursor-pointer" data-category="motion" onclick='openModal(["Motion_Graphics/DarkDreamsStudios.mp4"], "Darkdreamsstudios")'>
+        <video autoplay loop muted playsinline class="w-full h-auto"><source src="Motion_Graphics/DarkDreamsStudios.mp4" type="video/mp4"></video>
+        <div class="overlay">
+            <h3 class="text-xl font-bold text-center px-2">Darkdreamsstudios</h3>
+            <p class="mt-2 text-sm text-gray-300">Motion Graphics</p>
+            <div class="mt-4 border border-white px-4 py-1 rounded-full text-xs font-bold bg-white/20 backdrop-blur-sm">
+                Ver 1 archivos
+            </div>
+        </div>
+    </div>
+    
+        </div>
+    </section>
+
+    <!-- CV Section -->
+    <section id="cv" class="bg-black text-white py-24">
+        <div class="max-w-screen-2xl mx-auto px-6 lg:px-12">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-16">
+                <div class="col-span-1">
+                    <h2 class="text-4xl font-black tracking-tighter mb-6">SOBRE MÍ</h2>
+                    <p class="text-gray-400 font-light text-lg mb-8 leading-relaxed">
+                        Soy José Miguel, profesional del 3D con formación multidisciplinar. Combino el arte tradicional con las nuevas tecnologías para crear assets de videojuegos, monumentos falleros y figuras para impresión.
+                    </p>
+                    <div class="space-y-4">
+                        <p><i class="fa-solid fa-envelope w-8 text-gray-500"></i> Pepm83@gmail.com</p>
+                        <p><i class="fa-brands fa-artstation w-8 text-gray-500"></i> <a href="https://www.artstation.com/pepm83" class="hover:text-blue-400">ArtStation Profile</a></p>
+                        <p><i class="fa-solid fa-globe w-8 text-gray-500"></i> <a href="https://monfosc.com/" class="hover:text-blue-400">Monfosc.com</a></p>
+                    </div>
+                </div>
+
+                <div class="col-span-1 lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-12">
+                    <div>
+                        <h3 class="text-2xl font-bold mb-6 text-blue-500 border-b border-gray-800 pb-2">Experiencia Laboral</h3>
+                        <ul class="space-y-6">
+                            <li><h4 class="font-bold text-lg">Modelador 3D Props y Escenarios</h4><p class="text-gray-400 text-sm">Inspira Animation</p></li>
+                            <li><h4 class="font-bold text-lg">Modelador de Fallas</h4><p class="text-gray-400 text-sm">Sacabutx Art S.L.</p></li>
+                            <li><h4 class="font-bold text-lg">Diseñador Gráfico Freelance</h4><p class="text-gray-400 text-sm">Logotipos y maquetación</p></li>
+                            <li><h4 class="font-bold text-lg">Profesor y Coordinador</h4><p class="text-gray-400 text-sm">Fundación Secretariado Gitano / Colevisa S.L.</p></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 class="text-2xl font-bold mb-6 text-blue-500 border-b border-gray-800 pb-2">Formación Académica</h3>
+                        <ul class="space-y-6">
+                            <li><h4 class="font-bold text-lg">CFGS Animación 3D y Entornos Interactivos</h4></li>
+                            <li><h4 class="font-bold text-lg">Máster en Creación Digital e Innovación</h4><p class="text-gray-400 text-sm">Nuevas Tecnologías</p></li>
+                            <li><h4 class="font-bold text-lg">Concept Art y Stop Motion</h4><p class="text-gray-400 text-sm">RTVE / Inspira Animation</p></li>
+                            <li><h4 class="font-bold text-lg">Magisterio y Téc. Ortoprotésico</h4></li>
+                        </ul>
+                    </div>
+                    <div class="md:col-span-2 mt-6">
+                        <h3 class="text-2xl font-bold mb-6 text-blue-500 border-b border-gray-800 pb-2">Herramientas y Skills</h3>
+                        <div class="flex flex-wrap gap-3">
+                            <span class="bg-gray-800 px-4 py-2 rounded font-medium text-sm">Blender</span>
+                            <span class="bg-gray-800 px-4 py-2 rounded font-medium text-sm">ZBrush</span>
+                            <span class="bg-gray-800 px-4 py-2 rounded font-medium text-sm">Substance Painter</span>
+                            <span class="bg-gray-800 px-4 py-2 rounded font-medium text-sm">Unity</span>
+                            <span class="bg-gray-800 px-4 py-2 rounded font-medium text-sm">Adobe Suite</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer id="contacto" class="bg-[#f9f9f9] py-32 text-center">
+        <h2 class="text-5xl md:text-7xl font-black tracking-tighter mb-8">¿TRABAJAMOS JUNTOS?</h2>
+        <a href="mailto:Pepm83@gmail.com" class="text-2xl md:text-4xl font-light hover:text-blue-600 transition-colors border-b-2 border-black hover:border-blue-600 pb-2">
+            Pepm83@gmail.com
+        </a>
+        <div class="mt-20 flex justify-center gap-8 text-3xl">
+            <a href="https://monfosc.com/" class="text-gray-400 hover:text-black transition-colors"><i class="fa-solid fa-globe"></i></a>
+            <a href="https://cults3d.com/es/usuarios/Monfosc_Studio/modelos-3d" class="text-gray-400 hover:text-black transition-colors"><i class="fa-solid fa-cube"></i></a>
+            <a href="https://www.artstation.com/pepm83" class="text-gray-400 hover:text-black transition-colors"><i class="fa-brands fa-artstation"></i></a>
+        </div>
+        <p class="mt-12 text-gray-500 text-sm">© 2026 José Miguel M. | Monfosc Studio</p>
+    </footer>
+
+    <script>
+        function openModal(images, title) {
+            const modal = document.getElementById('project-modal');
+            const gallery = document.getElementById('modal-gallery');
+            document.getElementById('modal-title').innerText = title;
+            
+            gallery.innerHTML = '';
+            images.forEach(src => {
+                if(src.endsWith('.mp4')) {
+                    gallery.innerHTML += `<video controls autoplay loop muted playsinline class="w-full max-w-4xl rounded-lg shadow-2xl mb-4"><source src="${src}" type="video/mp4"></video>`;
+                } else {
+                    gallery.innerHTML += `<img src="${src}" class="w-full max-w-4xl rounded-lg shadow-2xl mb-4">`;
+                }
+            });
+            
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeModal() {
+            document.getElementById('project-modal').classList.add('hidden');
+            document.getElementById('modal-gallery').innerHTML = ''; 
+            document.body.style.overflow = 'auto';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const filterBtns = document.querySelectorAll('.filter-btn');
+            const items = document.querySelectorAll('.masonry-item');
+
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    filterBtns.forEach(b => {
+                        b.classList.remove('active', 'bg-black', 'text-white');
+                        b.classList.add('bg-white', 'text-black');
+                    });
+                    
+                    btn.classList.remove('bg-white', 'text-black');
+                    btn.classList.add('active', 'bg-black', 'text-white');
+
+                    const filter = btn.getAttribute('data-filter');
+
+                    items.forEach(item => {
+                        if (filter === 'all' || item.getAttribute('data-category') === filter) {
+                            item.style.display = 'block';
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>
