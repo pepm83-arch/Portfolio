@@ -10,14 +10,15 @@ import html
 import schedule
 
 # ----------------------------------------------------------------------
-# CONFIGURACIÓN TELEGRAM
+# CONFIGURACIÓN TELEGRAM Y PORTFOLIO
 # ----------------------------------------------------------------------
 BASE_DIR = Path(__file__).parent
 
 TELEGRAM_BOT_TOKEN = "8958926765:AAHka_dr0e4kewtgyY-D0pgilYLx85wXO4w"
 TELEGRAM_CHAT_ID = "708457190"
+PORTFOLIO_URL = "https://pepm83-arch.github.io/Portfolio"
 
-# Fuentes de ofertas (Mastodon Gamedev community + Remotive + RemoteOK)
+# Fuentes de ofertas
 SOURCES = [
     {
         "type": "mastodon",
@@ -46,47 +47,66 @@ SOURCES = [
     }
 ]
 
-# Palabras clave de 3D / Game Art
-KEYWORDS_3D = [
-    r"\b3d\b",
-    r"modelador",
-    r"modeler",
-    r"modeller",
-    r"prop",
-    r"props",
-    r"environment",
-    r"entorno",
-    r"escenari",
-    r"miniatur",
-    r"sculpt",
-    r"esculpid",
-    r"blender",
-    r"zbrush",
-    r"asset",
-    r"assets",
-    r"character artist",
-    r"concept art",
-    r"unity",
-    r"unreal"
+# 1. TÉRMINOS ARTÍSTICOS EXPLÍCITOS DE NUESTRA ESPECIALIDAD (Obligatorios)
+ARTISTIC_3D_KEYWORDS = [
+    r"3d\s+modeler",
+    r"3d\s+modeller",
+    r"3d\s+artist",
+    r"3d\s+generalist",
+    r"\bprops?\b",
+    r"\bcharacters?\b",
+    r"\benvironments?\b",
+    r"\bassets?\b",
+    r"\bsculptor\b",
+    r"\bsculpting\b",
+    r"\bminiatures?\b",
+    r"\bblender\b",
+    r"\bzbrush\b",
+    r"hard\s+surface",
+    r"modelador\s+3d",
+    r"artista\s+3d"
 ]
 
-# Palabras clave de contratación
+# 2. TÉRMINOS ADMINISTRATIVOS / CORPORATIVOS A DESCARTAR (Lista negra estricta en el título)
+EXCLUDED_TITLE_KEYWORDS = [
+    r"\bmanager\b",
+    r"\bdirector\b",
+    r"\bassistant\b",
+    r"\bstrategist\b",
+    r"\brecruiter\b",
+    r"\bmarketing\b",
+    r"\bhr\b",
+    r"\blegal\b",
+    r"\bdeveloper\b",
+    r"\bfrontend\b",
+    r"\bbackend\b",
+    r"\bengineer\b",
+    r"\baccountant\b",
+    r"\bsales\b",
+    r"\banalyst\b",
+    r"\bqa\b",
+    r"\bproduct\s+owner\b",
+    r"\bexecutive\b"
+]
+
+# Palabras de contratación requeridas para comunidades abiertas (Mastodon)
 KEYWORDS_HIRING = [
-    r"hiring",
+    r"\bhiring\b",
     r"looking for",
     r"we need",
-    r"job",
-    r"position",
-    r"freelance",
-    r"contract",
-    r"remote",
-    r"paid",
-    r"buscamos",
+    r"\bjob\b",
+    r"\bposition\b",
+    r"\bfreelance\b",
+    r"\bcontract\b",
+    r"\bremote\b",
+    r"\bpaid\b",
+    r"\bbuscamos\b",
     r"se busca",
-    r"necesit"
+    r"\bnecesit"
 ]
 
-REGEX_3D = [re.compile(k, re.IGNORECASE) for k in KEYWORDS_3D]
+REGEX_ARTISTIC_3D = [re.compile(k, re.IGNORECASE) for k in ARTISTIC_3D_KEYWORDS]
+REGEX_EXCLUDED_TITLE = [re.compile(k, re.IGNORECASE) for k in EXCLUDED_TITLE_KEYWORDS]
 REGEX_HIRING = [re.compile(k, re.IGNORECASE) for k in KEYWORDS_HIRING]
 
 HIST_FILE = BASE_DIR / "job_history.json"
@@ -130,12 +150,45 @@ def send_telegram(text: str):
     except Exception as e:
         logging.error(f"Error enviando mensaje a Telegram: {e}")
 
-def matches_criteria(text: str, is_curated_job_board: bool = False) -> bool:
-    has_3d = any(r.search(text) for r in REGEX_3D)
-    if is_curated_job_board:
-        return has_3d
-    has_hiring = any(r.search(text) for r in REGEX_HIRING)
-    return has_3d and has_hiring
+def build_application_pitch(job_title: str) -> str:
+    """Genera el mensaje de postulación listo para copiar y pegar en inglés."""
+    pitch = (
+        f"Hi,\n\n"
+        f"I came across your opening for {job_title} and would love to collaborate with you.\n\n"
+        f"I'm a 3D Generalist & Modeler specializing in Props, Characters, and Hard Surface assets with production experience. "
+        f"My core workflow is built around Blender and ZBrush, optimizing models for real-time game engines/animation as well as 3D printing & miniatures.\n\n"
+        f"You can review my interactive portfolio and previous work here:\n"
+        f"{PORTFOLIO_URL}\n\n"
+        f"I have immediate availability for remote freelance / contract work and would be happy to complete a quick art test if needed.\n\n"
+        f"Looking forward to hearing from you!\n"
+        f"Best regards,\n"
+        f"José Miguel"
+    )
+    return pitch
+
+def is_strictly_3d_art(title: str, content: str, is_curated_job_board: bool = False) -> bool:
+    """Filtra estrictamente asegurando que sea un puesto de arte 3D y sin ruido corporativo."""
+    # 1. Descartar si el título contiene puestos corporativos/administrativos
+    if any(r.search(title) for r in REGEX_EXCLUDED_TITLE):
+        return False
+
+    full_text = f"{title} {content}"
+
+    # 2. Exigir explícitamente términos artísticos 3D clave
+    has_artistic_3d = any(r.search(full_text) for r in REGEX_ARTISTIC_3D)
+    if not has_artistic_3d:
+        return False
+
+    # 3. En comunidades abiertas, asegurar que es una oferta (no alguien buscando trabajo)
+    if not is_curated_job_board:
+        title_lower = title.lower()
+        if "[for hire]" in title_lower and "[hiring]" not in title_lower:
+            return False
+        has_hiring = any(r.search(full_text) for r in REGEX_HIRING)
+        if not has_hiring:
+            return False
+
+    return True
 
 def fetch_json(url: str):
     req = urllib.request.Request(
@@ -146,7 +199,7 @@ def fetch_json(url: str):
         return json.loads(resp.read().decode('utf-8'))
 
 def check_all_sources():
-    logging.info("🔍 Comprobando bolsas de empleo y comunidades...")
+    logging.info("🔍 Comprobando bolsas de empleo con filtrado estricto de Arte 3D...")
     new_found = 0
 
     for src in SOURCES:
@@ -165,20 +218,24 @@ def check_all_sources():
 
                     content = clean_html(post.get("content", ""))
                     post_url = post.get("url", "")
+                    # En Mastodon no siempre hay título separado, extraemos la primera frase como título
+                    first_line = content.split(".")[0][:70] if content else "3D Artist Opportunity"
 
-                    if matches_criteria(content, is_curated_job_board=False):
+                    if is_strictly_3d_art(first_line, content, is_curated_job_board=False):
                         new_found += 1
-                        snippet = (content[:280] + '...') if len(content) > 280 else content
-                        
+                        snippet = (content[:250] + '...') if len(content) > 250 else content
+                        pitch = build_application_pitch(first_line)
+
                         msg = (
-                            f"🚨 <b>¡NUEVA OFERTA / OPORTUNIDAD 3D!</b>\n\n"
+                            f"🚨 <b>¡NUEVA OFERTA 3D DETECTADA!</b>\n\n"
                             f"📌 <b>Fuente:</b> {name}\n"
-                            f"📝 <b>Detalle:</b>\n{snippet}\n\n"
-                            f"🔗 <b>Enlace:</b>\n{post_url}\n\n"
-                            f"💡 <i>¡Sé de los primeros en responder con tu portafolio!</i>"
+                            f"📝 <b>Detalle:</b>\n{html.escape(snippet)}\n\n"
+                            f"🔗 <b>Enlace a la oferta:</b>\n{post_url}\n\n"
+                            f"📋 <b>PITCH RÁPIDO (Copia y Pega para postularte):</b>\n"
+                            f"<code>{html.escape(pitch)}</code>"
                         )
                         send_telegram(msg)
-                    
+
                     SEEN_IDS.add(item_id)
 
             elif stype == "remotive":
@@ -192,24 +249,25 @@ def check_all_sources():
                     company = job.get("company_name", "")
                     job_url = job.get("url", "")
                     desc = clean_html(job.get("description", ""))
-                    full_text = f"{title} {desc}"
 
-                    if matches_criteria(full_text, is_curated_job_board=True):
+                    if is_strictly_3d_art(title, desc, is_curated_job_board=True):
                         new_found += 1
+                        pitch = build_application_pitch(title)
+
                         msg = (
                             f"🚨 <b>¡NUEVA OFERTA 3D DETECTADA!</b>\n\n"
                             f"📌 <b>Fuente:</b> {name}\n"
-                            f"🏢 <b>Empresa:</b> {company}\n"
-                            f"📝 <b>Puesto:</b> {title}\n\n"
-                            f"🔗 <b>Postularse:</b>\n{job_url}\n\n"
-                            f"💡 <i>¡Envía tu portafolio y carta de presentación!</i>"
+                            f"🏢 <b>Empresa:</b> {html.escape(company)}\n"
+                            f"📝 <b>Puesto:</b> {html.escape(title)}\n\n"
+                            f"🔗 <b>Enlace a la oferta:</b>\n{job_url}\n\n"
+                            f"📋 <b>PITCH RÁPIDO (Copia y Pega para postularte):</b>\n"
+                            f"<code>{html.escape(pitch)}</code>"
                         )
                         send_telegram(msg)
 
                     SEEN_IDS.add(item_id)
 
             elif stype == "remoteok":
-                # La primera entrada de remoteok suele ser legal/metadata
                 jobs = data[1:] if isinstance(data, list) and len(data) > 1 else []
                 for job in jobs:
                     item_id = f"remoteok_{job.get('id')}"
@@ -221,17 +279,20 @@ def check_all_sources():
                     job_url = job.get("url", "")
                     tags = " ".join(job.get("tags", []))
                     desc = clean_html(job.get("description", ""))
-                    full_text = f"{title} {tags} {desc}"
+                    content = f"{tags} {desc}"
 
-                    if matches_criteria(full_text, is_curated_job_board=True):
+                    if is_strictly_3d_art(title, content, is_curated_job_board=True):
                         new_found += 1
+                        pitch = build_application_pitch(title)
+
                         msg = (
-                            f"🚨 <b>¡NUEVA OFERTA 3D / GAME ART!</b>\n\n"
+                            f"🚨 <b>¡NUEVA OFERTA 3D DETECTADA!</b>\n\n"
                             f"📌 <b>Fuente:</b> {name}\n"
-                            f"🏢 <b>Empresa:</b> {company}\n"
-                            f"📝 <b>Puesto:</b> {title}\n\n"
-                            f"🔗 <b>Postularse:</b>\n{job_url}\n\n"
-                            f"💡 <i>¡Revisa los requisitos y postula con tu web!</i>"
+                            f"🏢 <b>Empresa:</b> {html.escape(company)}\n"
+                            f"📝 <b>Puesto:</b> {html.escape(title)}\n\n"
+                            f"🔗 <b>Enlace a la oferta:</b>\n{job_url}\n\n"
+                            f"📋 <b>PITCH RÁPIDO (Copia y Pega para postularte):</b>\n"
+                            f"<code>{html.escape(pitch)}</code>"
                         )
                         send_telegram(msg)
 
@@ -242,7 +303,7 @@ def check_all_sources():
 
     if new_found > 0:
         save_history()
-    logging.info(f"Comprobación finalizada. Nuevas ofertas enviadas: {new_found}")
+    logging.info(f"Comprobación finalizada. Ofertas válidas de Arte 3D enviadas: {new_found}")
 
 def main():
     logging.basicConfig(
@@ -250,12 +311,12 @@ def main():
         format="%(asctime)s [%(levelname)s] %(message)s",
         datefmt="%H:%M:%S"
     )
-    logging.info("🤖 Job Monitor 3D Activo y Vigilando...")
+    logging.info("🤖 Job Monitor 3D Activo (Filtro Estricto + Asistente de Postulación)...")
 
-    # Ejecutar una primera revisión al iniciar
+    # Ejecutar primera revisión al iniciar
     check_all_sources()
 
-    # Repetir revisión cada 5 minutos
+    # Repetir revisión cada 5 minutos en local
     schedule.every(5).minutes.do(check_all_sources)
 
     while True:
