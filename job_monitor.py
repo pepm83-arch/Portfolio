@@ -18,22 +18,47 @@ TELEGRAM_BOT_TOKEN = "8958926765:AAHka_dr0e4kewtgyY-D0pgilYLx85wXO4w"
 TELEGRAM_CHAT_ID = "708457190"
 PORTFOLIO_URL = "https://pepm83-arch.github.io/Portfolio"
 
-# Fuentes de ofertas
+# Fuentes ampliadas y activas en tiempo real
 SOURCES = [
     {
         "type": "mastodon",
         "name": "Mastodon GameDev Jobs",
-        "url": "https://mastodon.gamedev.place/api/v1/timelines/tag/gamedevjobs"
+        "url": "https://mastodon.gamedev.place/api/v1/timelines/tag/gamedevjobs?limit=40"
     },
     {
         "type": "mastodon",
         "name": "Mastodon Game Jobs",
-        "url": "https://mastodon.gamedev.place/api/v1/timelines/tag/gamejobs"
+        "url": "https://mastodon.gamedev.place/api/v1/timelines/tag/gamejobs?limit=40"
     },
     {
         "type": "mastodon",
         "name": "Mastodon 3D Artist",
-        "url": "https://mastodon.gamedev.place/api/v1/timelines/tag/3dartist"
+        "url": "https://mastodon.gamedev.place/api/v1/timelines/tag/3dartist?limit=40"
+    },
+    {
+        "type": "mastodon",
+        "name": "Mastodon Game Art",
+        "url": "https://mastodon.gamedev.place/api/v1/timelines/tag/gameart?limit=40"
+    },
+    {
+        "type": "mastodon",
+        "name": "Mastodon Blender",
+        "url": "https://mastodon.gamedev.place/api/v1/timelines/tag/blender?limit=40"
+    },
+    {
+        "type": "mastodon",
+        "name": "Mastodon GameDev General",
+        "url": "https://mastodon.gamedev.place/api/v1/timelines/tag/gamedev?limit=40"
+    },
+    {
+        "type": "mastodon",
+        "name": "Mastodon Social 3D Artist",
+        "url": "https://mastodon.social/api/v1/timelines/tag/3dartist?limit=40"
+    },
+    {
+        "type": "mastodon",
+        "name": "Mastodon Social GameDev",
+        "url": "https://mastodon.social/api/v1/timelines/tag/gamedev?limit=40"
     },
     {
         "type": "remotive",
@@ -179,10 +204,13 @@ def is_strictly_3d_art(title: str, content: str, is_curated_job_board: bool = Fa
     if not has_artistic_3d:
         return False
 
-    # 3. En comunidades abiertas, asegurar que es una oferta (no alguien buscando trabajo)
+    # 3. En comunidades abiertas, asegurar que es una oferta (no alguien buscando trabajo o venta de assets)
     if not is_curated_job_board:
         title_lower = title.lower()
         if "[for hire]" in title_lower and "[hiring]" not in title_lower:
+            return False
+        # Descartar anuncios de venta de assets propios ("for sale", "available on store")
+        if "for sale" in full_text.lower() or "asset store" in full_text.lower():
             return False
         has_hiring = any(r.search(full_text) for r in REGEX_HIRING)
         if not has_hiring:
@@ -218,7 +246,6 @@ def check_all_sources():
 
                     content = clean_html(post.get("content", ""))
                     post_url = post.get("url", "")
-                    # En Mastodon no siempre hay título separado, extraemos la primera frase como título
                     first_line = content.split(".")[0][:70] if content else "3D Artist Opportunity"
 
                     if is_strictly_3d_art(first_line, content, is_curated_job_board=False):
