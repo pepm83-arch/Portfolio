@@ -10,10 +10,17 @@ files = []
 for ext in extensions:
     files.extend(glob.glob(os.path.join(base_dir, '**', ext), recursive=True))
 
+# Lista de proyectos excluidos del index (manteniendo los archivos en sus carpetas)
+EXCLUDED_PROJECTS = ['carlitos', 'nave', 'habitacion', 'tiburon']
+
 projects = {}
 for f in files:
     rel_path = os.path.relpath(f, base_dir).replace('\\', '/')
     if rel_path == "index.html" or rel_path.endswith('.py'): continue
+    
+    # Comprobar si el archivo pertenece a alguno de los proyectos excluidos
+    if any(ex in rel_path.lower() for ex in EXCLUDED_PROJECTS):
+        continue
     
     parts = rel_path.split('/')
     
@@ -40,12 +47,6 @@ for group_key, data in projects.items():
     items.sort(key=lambda x: not (x.lower().endswith('.mp4') or x.lower().endswith('.mov')))
     
     cover_item = items[0]
-    
-    if "tiburon" in group_key.lower():
-        for item in items:
-            if "render4" in item.lower():
-                cover_item = item
-                break
             
     cat_id = "all"
     subtitle = "Proyecto 3D"
@@ -189,8 +190,6 @@ html_template = f"""<!DOCTYPE html>
             <button class="filter-btn bg-white text-black hover:bg-gray-100 px-6 py-2 rounded-full border border-gray-300 font-medium text-sm transition-colors" data-filter="figuras">Figuras</button>
             <button class="filter-btn bg-white text-black hover:bg-gray-100 px-6 py-2 rounded-full border border-gray-300 font-medium text-sm transition-colors" data-filter="fallas">Fallas</button>
             <button class="filter-btn bg-white text-black hover:bg-gray-100 px-6 py-2 rounded-full border border-gray-300 font-medium text-sm transition-colors" data-filter="props">Props</button>
-            <button class="filter-btn bg-white text-black hover:bg-gray-100 px-6 py-2 rounded-full border border-gray-300 font-medium text-sm transition-colors" data-filter="entornos">Entornos</button>
-            <button class="filter-btn bg-white text-black hover:bg-gray-100 px-6 py-2 rounded-full border border-gray-300 font-medium text-sm transition-colors" data-filter="animacion">Animación</button>
             <button class="filter-btn bg-white text-black hover:bg-gray-100 px-6 py-2 rounded-full border border-gray-300 font-medium text-sm transition-colors" data-filter="concept">Concept Art</button>
             <button class="filter-btn bg-white text-black hover:bg-gray-100 px-6 py-2 rounded-full border border-gray-300 font-medium text-sm transition-colors" data-filter="motion">Motion</button>
         </div>
@@ -202,6 +201,7 @@ html_template = f"""<!DOCTYPE html>
         </div>
     </section>
 
+    <!-- CV Section -->
     <section id="cv" class="bg-black text-white py-24">
         <div class="max-w-screen-2xl mx-auto px-6 lg:px-12">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-16">
@@ -248,77 +248,80 @@ html_template = f"""<!DOCTYPE html>
                     </div>
                 </div>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <footer id="contacto" class="bg-[#f9f9f9] py-32 text-center">
-            <h2 class="text-5xl md:text-7xl font-black tracking-tighter mb-8">¿TRABAJAMOS JUNTOS?</h2>
-            <a href="mailto:Pepm83@gmail.com" class="text-2xl md:text-4xl font-light hover:text-blue-600 transition-colors border-b-2 border-black hover:border-blue-600 pb-2">
-                Pepm83@gmail.com
-            </a>
-            <div class="mt-20 flex justify-center gap-8 text-3xl">
-                <a href="https://monfosc.com/" class="text-gray-400 hover:text-black transition-colors"><i class="fa-solid fa-globe"></i></a>
-                <a href="https://cults3d.com/es/usuarios/Monfosc_Studio/modelos-3d" class="text-gray-400 hover:text-black transition-colors"><i class="fa-solid fa-cube"></i></a>
-                <a href="https://www.artstation.com/pepm83" class="text-gray-400 hover:text-black transition-colors"><i class="fa-brands fa-artstation"></i></a>
-            </div>
-            <p class="mt-12 text-gray-500 text-sm">© 2026 José Miguel M. | Monfosc Studio</p>
-        </footer>
+    <footer id="contacto" class="bg-[#f9f9f9] py-32 text-center">
+        <h2 class="text-5xl md:text-7xl font-black tracking-tighter mb-8">¿TRABAJAMOS JUNTOS?</h2>
+        <a href="mailto:Pepm83@gmail.com" class="text-2xl md:text-4xl font-light hover:text-blue-600 transition-colors border-b-2 border-black hover:border-blue-600 pb-2">
+            Pepm83@gmail.com
+        </a>
+        <div class="mt-20 flex justify-center gap-8 text-3xl">
+            <a href="https://monfosc.com/" class="text-gray-400 hover:text-black transition-colors"><i class="fa-solid fa-globe"></i></a>
+            <a href="https://cults3d.com/es/usuarios/Monfosc_Studio/modelos-3d" class="text-gray-400 hover:text-black transition-colors"><i class="fa-solid fa-cube"></i></a>
+            <a href="https://www.artstation.com/pepm83" class="text-gray-400 hover:text-black transition-colors"><i class="fa-brands fa-artstation"></i></a>
+        </div>
+        <p class="mt-12 text-gray-500 text-sm">© 2026 José Miguel M. | Monfosc Studio</p>
+    </footer>
 
-        <script>
-            function openModal(images, title) {{
-                const modal = document.getElementById('project-modal');
-                const gallery = document.getElementById('modal-gallery');
-                document.getElementById('modal-title').innerText = title;
-                
-                gallery.innerHTML = '';
-                images.forEach(src => {{
-                    const lowerSrc = src.toLowerCase();
-                    if(lowerSrc.endsWith('.mp4') || lowerSrc.endsWith('.mov')) {{
-                        gallery.innerHTML += `<video controls autoplay loop muted playsinline class="w-full max-w-4xl rounded-lg shadow-2xl mb-4"><source src="${{src}}"></video>`;
-                    }} else {{
-                        gallery.innerHTML += `<img src="${{src}}" class="w-full max-w-4xl rounded-lg shadow-2xl mb-4">`;
-                    }}
-                }});
-                
-                modal.classList.remove('hidden');
-                document.body.style.overflow = 'hidden';
-            }}
+    <script>
+        function openModal(images, title) {{
+            const modal = document.getElementById('project-modal');
+            const gallery = document.getElementById('modal-gallery');
+            document.getElementById('modal-title').innerText = title;
             
-            function closeModal() {{
-                document.getElementById('project-modal').classList.add('hidden');
-                document.getElementById('modal-gallery').innerHTML = ''; 
-                document.body.style.overflow = 'auto';
-            }}
+            gallery.innerHTML = '';
+            images.forEach(src => {{
+                const lowerSrc = src.toLowerCase();
+                if(lowerSrc.endsWith('.mp4') || lowerSrc.endsWith('.mov')) {{
+                    gallery.innerHTML += `<video controls autoplay loop muted playsinline class="w-full max-w-4xl rounded-lg shadow-2xl mb-4"><source src="${{src}}"></video>`;
+                }} else {{
+                    gallery.innerHTML += `<img src="${{src}}" class="w-full max-w-4xl rounded-lg shadow-2xl mb-4">`;
+                }}
+            }});
+            
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }}
+        
+        function closeModal() {{
+            document.getElementById('project-modal').classList.add('hidden');
+            document.getElementById('modal-gallery').innerHTML = ''; 
+            document.body.style.overflow = 'auto';
+        }}
 
-            document.addEventListener('DOMContentLoaded', () => {{
-                const filterBtns = document.querySelectorAll('.filter-btn');
-                const items = document.querySelectorAll('.masonry-item');
+        document.addEventListener('DOMContentLoaded', () => {{
+            const filterBtns = document.querySelectorAll('.filter-btn');
+            const items = document.querySelectorAll('.masonry-item');
 
-                filterBtns.forEach(btn => {{
-                    btn.addEventListener('click', () => {{
-                        filterBtns.forEach(b => {{
-                            b.classList.remove('active', 'bg-black', 'text-white');
-                            b.classList.add('bg-white', 'text-black');
-                        }});
-                        
-                        btn.classList.remove('bg-white', 'text-black');
-                        btn.classList.add('active', 'bg-black', 'text-white');
+            filterBtns.forEach(btn => {{
+                btn.addEventListener('click', () => {{
+                    filterBtns.forEach(b => {{
+                        b.classList.remove('active', 'bg-black', 'text-white');
+                        b.classList.add('bg-white', 'text-black');
+                    }});
+                    
+                    btn.classList.remove('bg-white', 'text-black');
+                    btn.classList.add('active', 'bg-black', 'text-white');
 
-                        const filter = btn.getAttribute('data-filter');
+                    const filter = btn.getAttribute('data-filter');
 
-                        items.forEach(item => {{
-                            if (filter === 'all' || item.getAttribute('data-category') === filter) {{
-                                item.style.display = 'block';
-                            }} else {{
-                                item.style.display = 'none';
-                            }}
-                        }});
+                    items.forEach(item => {{
+                        if (filter === 'all' || item.getAttribute('data-category') === filter) {{
+                            item.style.display = 'block';
+                        }} else {{
+                            item.style.display = 'none';
+                        }}
                     }});
                 }});
             }});
-        </script>
-    </body>
-    </html>
+        }});
+    </script>
+</body>
+</html>
 """
 
 with open(html_file, 'w', encoding='utf-8') as f:
     f.write(html_template)
+
+print(f"Index generado correctamente. Total de proyectos visibles: {len(projects)}")
