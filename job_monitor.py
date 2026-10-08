@@ -7,6 +7,7 @@ from pathlib import Path
 import urllib.request
 import urllib.parse
 import html
+import feedparser
 import schedule
 
 # ----------------------------------------------------------------------
@@ -18,84 +19,68 @@ TELEGRAM_BOT_TOKEN = "8958926765:AAHka_dr0e4kewtgyY-D0pgilYLx85wXO4w"
 TELEGRAM_CHAT_ID = "708457190"
 PORTFOLIO_URL = "https://pepm83-arch.github.io/Portfolio"
 
-# Fuentes ampliadas y activas en tiempo real
-SOURCES = [
+# Cabecera realista de navegador para evitar bloqueos 403 / anti-scraping
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 JobMonitor/1.0"
+}
+
+# 1. FUENTES RSS CONFIGURADAS (Mercado hispanohablante e internacional)
+FEEDS = [
     {
-        "type": "mastodon",
-        "name": "Mastodon GameDev Jobs",
-        "url": "https://mastodon.gamedev.place/api/v1/timelines/tag/gamedevjobs?limit=40"
+        "name": "Notodoanimacion (España/Latam 3D)",
+        "url": "https://www.notodoanimacion.es/feed/"
     },
     {
-        "type": "mastodon",
-        "name": "Mastodon Game Jobs",
-        "url": "https://mastodon.gamedev.place/api/v1/timelines/tag/gamejobs?limit=40"
+        "name": "Reddit r/gameDevClassifieds",
+        "url": "https://www.reddit.com/r/gameDevClassifieds/new/.rss"
     },
     {
-        "type": "mastodon",
-        "name": "Mastodon 3D Artist",
-        "url": "https://mastodon.gamedev.place/api/v1/timelines/tag/3dartist?limit=40"
+        "name": "Reddit r/INAT (I Need A Team)",
+        "url": "https://www.reddit.com/r/INAT/new/.rss"
     },
     {
-        "type": "mastodon",
-        "name": "Mastodon Game Art",
-        "url": "https://mastodon.gamedev.place/api/v1/timelines/tag/gameart?limit=40"
+        "name": "Reddit r/3Dmodeling",
+        "url": "https://www.reddit.com/r/3Dmodeling/new/.rss"
     },
     {
-        "type": "mastodon",
-        "name": "Mastodon Blender",
-        "url": "https://mastodon.gamedev.place/api/v1/timelines/tag/blender?limit=40"
+        "name": "Remotive Remote Jobs",
+        "url": "https://remotive.com/remote-jobs/feed"
     },
     {
-        "type": "mastodon",
-        "name": "Mastodon GameDev General",
-        "url": "https://mastodon.gamedev.place/api/v1/timelines/tag/gamedev?limit=40"
-    },
-    {
-        "type": "mastodon",
-        "name": "Mastodon Social 3D Artist",
-        "url": "https://mastodon.social/api/v1/timelines/tag/3dartist?limit=40"
-    },
-    {
-        "type": "mastodon",
-        "name": "Mastodon Social GameDev",
-        "url": "https://mastodon.social/api/v1/timelines/tag/gamedev?limit=40"
-    },
-    {
-        "type": "remotive",
-        "name": "Remotive Design & 3D",
-        "url": "https://remotive.com/api/remote-jobs?category=design"
-    },
-    {
-        "type": "remoteok",
-        "name": "RemoteOK 3D & Gaming",
-        "url": "https://remoteok.com/api"
+        "name": "WeWorkRemotely Design & 3D",
+        "url": "https://weworkremotely.com/categories/remote-design-jobs.rss"
     }
 ]
 
-# 1. TÉRMINOS ARTÍSTICOS EXPLÍCITOS DE NUESTRA ESPECIALIDAD (Obligatorios)
-ARTISTIC_3D_KEYWORDS = [
-    r"3d\s+modeler",
-    r"3d\s+modeller",
-    r"3d\s+artist",
-    r"3d\s+generalist",
+# 2. FILTRADO QUIRÚRGICO DE OFERTAS
+
+# Términos requeridos de alta relevancia en Arte / Modelado 3D
+REQUIRED_3D_KEYWORDS = [
+    r"\b3d\b",
+    r"\bmodeler\b",
+    r"\bmodelador\b",
     r"\bprops?\b",
-    r"\bcharacters?\b",
-    r"\benvironments?\b",
-    r"\bassets?\b",
-    r"\bsculptor\b",
-    r"\bsculpting\b",
-    r"\bminiatures?\b",
+    r"\bcharacter\b",
+    r"\benvironment\b",
+    r"\basset\b",
+    r"\bminiature\b",
+    r"\bminiaturas?\b",
+    r"\bfigure\b",
+    r"\bfigura\b",
     r"\bblender\b",
     r"\bzbrush\b",
-    r"hard\s+surface",
-    r"modelador\s+3d",
-    r"artista\s+3d"
+    r"\bhardsurface\b",
+    r"\bhard-surface\b",
+    r"\btextur(?:ing|e)\b",
+    r"\bsculpt(?:or|ing)?\b",
+    r"\bescult(?:or|ura)?\b"
 ]
 
-# 2. TÉRMINOS ADMINISTRATIVOS / CORPORATIVOS A DESCARTAR (Lista negra estricta en el título)
+# Términos corporativos / ajenos al arte para descarte inmediato si aparecen en el título
 EXCLUDED_TITLE_KEYWORDS = [
     r"\bmanager\b",
     r"\bdirector\b",
+    r"\badministrative\b",
     r"\bassistant\b",
     r"\bstrategist\b",
     r"\brecruiter\b",
@@ -105,34 +90,13 @@ EXCLUDED_TITLE_KEYWORDS = [
     r"\bdeveloper\b",
     r"\bfrontend\b",
     r"\bbackend\b",
-    r"\bengineer\b",
-    r"\baccountant\b",
-    r"\bsales\b",
-    r"\banalyst\b",
+    r"\bdevops\b",
     r"\bqa\b",
-    r"\bproduct\s+owner\b",
-    r"\bexecutive\b"
+    r"\bsales\b"
 ]
 
-# Palabras de contratación requeridas para comunidades abiertas (Mastodon)
-KEYWORDS_HIRING = [
-    r"\bhiring\b",
-    r"looking for",
-    r"we need",
-    r"\bjob\b",
-    r"\bposition\b",
-    r"\bfreelance\b",
-    r"\bcontract\b",
-    r"\bremote\b",
-    r"\bpaid\b",
-    r"\bbuscamos\b",
-    r"se busca",
-    r"\bnecesit"
-]
-
-REGEX_ARTISTIC_3D = [re.compile(k, re.IGNORECASE) for k in ARTISTIC_3D_KEYWORDS]
+REGEX_REQUIRED_3D = [re.compile(k, re.IGNORECASE) for k in REQUIRED_3D_KEYWORDS]
 REGEX_EXCLUDED_TITLE = [re.compile(k, re.IGNORECASE) for k in EXCLUDED_TITLE_KEYWORDS]
-REGEX_HIRING = [re.compile(k, re.IGNORECASE) for k in KEYWORDS_HIRING]
 
 HIST_FILE = BASE_DIR / "job_history.json"
 if HIST_FILE.exists():
@@ -175,155 +139,82 @@ def send_telegram(text: str):
     except Exception as e:
         logging.error(f"Error enviando mensaje a Telegram: {e}")
 
-def build_application_pitch(job_title: str) -> str:
-    """Genera el mensaje de postulación listo para copiar y pegar en inglés."""
+def build_application_pitch() -> str:
+    """Genera la plantilla de postulación directa en inglés lista para copiar con un toque."""
     pitch = (
-        f"Hi,\n\n"
-        f"I came across your opening for {job_title} and would love to collaborate with you.\n\n"
-        f"I'm a 3D Generalist & Modeler specializing in Props, Characters, and Hard Surface assets with production experience. "
-        f"My core workflow is built around Blender and ZBrush, optimizing models for real-time game engines/animation as well as 3D printing & miniatures.\n\n"
-        f"You can review my interactive portfolio and previous work here:\n"
-        f"{PORTFOLIO_URL}\n\n"
-        f"I have immediate availability for remote freelance / contract work and would be happy to complete a quick art test if needed.\n\n"
-        f"Looking forward to hearing from you!\n"
-        f"Best regards,\n"
-        f"José Miguel"
+        "Hi! I saw your call for 3D Art/Modeling. I'm a 3D Generalist specialized in Props, Characters, and Hard-Surface assets (Blender, ZBrush) with production experience in game/animation assets and 3D printing/collectibles.\n"
+        f"You can check my portfolio here: {PORTFOLIO_URL}\n"
+        "Available immediately for freelance/remote work. Looking forward to discussing how I can help with your project!"
     )
     return pitch
 
-def is_strictly_3d_art(title: str, content: str, is_curated_job_board: bool = False) -> bool:
-    """Filtra estrictamente asegurando que sea un puesto de arte 3D y sin ruido corporativo."""
-    # 1. Descartar si el título contiene puestos corporativos/administrativos
+def is_strictly_3d_art(title: str, content: str) -> bool:
+    """Filtra con precisión: descarta puestos corporativos y exige términos clave de arte 3D."""
+    # 1. Descarte automático por título si contiene términos corporativos
     if any(r.search(title) for r in REGEX_EXCLUDED_TITLE):
         return False
 
     full_text = f"{title} {content}"
 
-    # 2. Exigir explícitamente términos artísticos 3D clave
-    has_artistic_3d = any(r.search(full_text) for r in REGEX_ARTISTIC_3D)
-    if not has_artistic_3d:
+    # 2. Exclusión de candidatos que ofrecen sus servicios [For Hire] en Reddit
+    title_lower = title.lower()
+    if "[for hire]" in title_lower and "[hiring]" not in title_lower:
         return False
 
-    # 3. En comunidades abiertas, asegurar que es una oferta (no alguien buscando trabajo o venta de assets)
-    if not is_curated_job_board:
-        title_lower = title.lower()
-        if "[for hire]" in title_lower and "[hiring]" not in title_lower:
-            return False
-        # Descartar anuncios de venta de assets propios ("for sale", "available on store")
-        if "for sale" in full_text.lower() or "asset store" in full_text.lower():
-            return False
-        has_hiring = any(r.search(full_text) for r in REGEX_HIRING)
-        if not has_hiring:
-            return False
+    # 3. Exigencia de coincidencia de al menos un término artístico 3D requerido
+    has_3d_keyword = any(r.search(full_text) for r in REGEX_REQUIRED_3D)
+    if not has_3d_keyword:
+        return False
 
     return True
 
-def fetch_json(url: str):
-    req = urllib.request.Request(
-        url,
-        headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/128.0.0.0 Safari/537.36"}
-    )
+def fetch_feed(url: str):
+    """Descarga el feed RSS con cabecera de navegador realista para evitar bloqueos 403."""
+    req = urllib.request.Request(url, headers=HEADERS)
     with urllib.request.urlopen(req, timeout=15) as resp:
-        return json.loads(resp.read().decode('utf-8'))
+        return resp.read()
 
 def check_all_sources():
-    logging.info("🔍 Comprobando bolsas de empleo con filtrado estricto de Arte 3D...")
+    logging.info("🔍 Comprobando feeds RSS con filtrado quirúrgico de Arte 3D...")
     new_found = 0
 
-    for src in SOURCES:
-        name = src["name"]
-        url = src["url"]
-        stype = src["type"]
+    for feed_info in FEEDS:
+        name = feed_info["name"]
+        url = feed_info["url"]
 
         try:
-            data = fetch_json(url)
+            feed_bytes = fetch_feed(url)
+            parsed_feed = feedparser.parse(feed_bytes)
 
-            if stype == "mastodon":
-                for post in data:
-                    item_id = f"masto_{post.get('id')}"
-                    if item_id in SEEN_IDS:
-                        continue
+            for entry in parsed_feed.entries:
+                item_id = entry.get("id", entry.get("link", ""))
+                if not item_id or item_id in SEEN_IDS:
+                    continue
 
-                    content = clean_html(post.get("content", ""))
-                    post_url = post.get("url", "")
-                    first_line = content.split(".")[0][:70] if content else "3D Artist Opportunity"
+                title = entry.get("title", "")
+                summary = clean_html(entry.get("summary", entry.get("description", "")))
+                link = entry.get("link", "")
 
-                    if is_strictly_3d_art(first_line, content, is_curated_job_board=False):
-                        new_found += 1
-                        snippet = (content[:250] + '...') if len(content) > 250 else content
-                        pitch = build_application_pitch(first_line)
+                if is_strictly_3d_art(title, summary):
+                    new_found += 1
+                    snippet = (summary[:200] + '...') if len(summary) > 200 else summary
+                    pitch = build_application_pitch()
 
-                        msg = (
-                            f"🚨 <b>¡NUEVA OFERTA 3D DETECTADA!</b>\n\n"
-                            f"📌 <b>Fuente:</b> {name}\n"
-                            f"📝 <b>Detalle:</b>\n{html.escape(snippet)}\n\n"
-                            f"🔗 <b>Enlace a la oferta:</b>\n{post_url}\n\n"
-                            f"📋 <b>PITCH RÁPIDO (Copia y Pega para postularte):</b>\n"
-                            f"<code>{html.escape(pitch)}</code>"
-                        )
-                        send_telegram(msg)
+                    msg = (
+                        f"🚨 <b>¡NUEVA OFERTA 3D DETECTADA!</b>\n\n"
+                        f"📌 <b>Fuente:</b> {html.escape(name)}\n"
+                        f"📝 <b>Puesto / Título:</b> {html.escape(title)}\n"
+                        f"📄 <b>Resumen:</b> {html.escape(snippet)}\n\n"
+                        f"🔗 <b>Enlace directo a la oferta:</b>\n{link}\n\n"
+                        f"📋 <b>PROPUESTA RÁPIDA (Toca para copiar):</b>\n"
+                        f"<code>{html.escape(pitch)}</code>"
+                    )
+                    send_telegram(msg)
 
-                    SEEN_IDS.add(item_id)
+                SEEN_IDS.add(item_id)
 
-            elif stype == "remotive":
-                jobs = data.get("jobs", [])
-                for job in jobs:
-                    item_id = f"remotive_{job.get('id')}"
-                    if item_id in SEEN_IDS:
-                        continue
-
-                    title = job.get("title", "")
-                    company = job.get("company_name", "")
-                    job_url = job.get("url", "")
-                    desc = clean_html(job.get("description", ""))
-
-                    if is_strictly_3d_art(title, desc, is_curated_job_board=True):
-                        new_found += 1
-                        pitch = build_application_pitch(title)
-
-                        msg = (
-                            f"🚨 <b>¡NUEVA OFERTA 3D DETECTADA!</b>\n\n"
-                            f"📌 <b>Fuente:</b> {name}\n"
-                            f"🏢 <b>Empresa:</b> {html.escape(company)}\n"
-                            f"📝 <b>Puesto:</b> {html.escape(title)}\n\n"
-                            f"🔗 <b>Enlace a la oferta:</b>\n{job_url}\n\n"
-                            f"📋 <b>PITCH RÁPIDO (Copia y Pega para postularte):</b>\n"
-                            f"<code>{html.escape(pitch)}</code>"
-                        )
-                        send_telegram(msg)
-
-                    SEEN_IDS.add(item_id)
-
-            elif stype == "remoteok":
-                jobs = data[1:] if isinstance(data, list) and len(data) > 1 else []
-                for job in jobs:
-                    item_id = f"remoteok_{job.get('id')}"
-                    if item_id in SEEN_IDS:
-                        continue
-
-                    title = job.get("position", "")
-                    company = job.get("company", "")
-                    job_url = job.get("url", "")
-                    tags = " ".join(job.get("tags", []))
-                    desc = clean_html(job.get("description", ""))
-                    content = f"{tags} {desc}"
-
-                    if is_strictly_3d_art(title, content, is_curated_job_board=True):
-                        new_found += 1
-                        pitch = build_application_pitch(title)
-
-                        msg = (
-                            f"🚨 <b>¡NUEVA OFERTA 3D DETECTADA!</b>\n\n"
-                            f"📌 <b>Fuente:</b> {name}\n"
-                            f"🏢 <b>Empresa:</b> {html.escape(company)}\n"
-                            f"📝 <b>Puesto:</b> {html.escape(title)}\n\n"
-                            f"🔗 <b>Enlace a la oferta:</b>\n{job_url}\n\n"
-                            f"📋 <b>PITCH RÁPIDO (Copia y Pega para postularte):</b>\n"
-                            f"<code>{html.escape(pitch)}</code>"
-                        )
-                        send_telegram(msg)
-
-                    SEEN_IDS.add(item_id)
+            # Pequeña pausa de cortesía entre feeds para no saturar servidores
+            time.sleep(1)
 
         except Exception as e:
             logging.error(f"Error revisando {name}: {e}")
@@ -338,7 +229,7 @@ def main():
         format="%(asctime)s [%(levelname)s] %(message)s",
         datefmt="%H:%M:%S"
     )
-    logging.info("🤖 Job Monitor 3D Activo (Filtro Estricto + Asistente de Postulación)...")
+    logging.info("🤖 Job Monitor 3D Activo (Fuentes RSS ampliadas + Filtro quirúrgico)...")
 
     # Ejecutar primera revisión al iniciar
     check_all_sources()

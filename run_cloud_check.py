@@ -8,7 +8,7 @@ if __name__ == "__main__":
         format="%(asctime)s [%(levelname)s] %(message)s",
         datefmt="%H:%M:%S"
     )
-    logging.info("🚀 Ejecutando revisión puntual de ofertas en la nube...")
+    logging.info("🚀 Ejecutando revisión puntual de ofertas en la nube (RSS Ampliados)...")
     try:
         check_all_sources()
         logging.info("✅ Revisión completada con éxito.")
