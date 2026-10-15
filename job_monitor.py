@@ -15,8 +15,7 @@ import schedule
 # ----------------------------------------------------------------------
 BASE_DIR = Path(__file__).parent
 
-TELEGRAM_BOT_TOKEN = "8958926765:AAHka_dr0e4kewtgyY-D0pgilYLx85wXO4w"
-TELEGRAM_CHAT_ID = "708457190"
+
 PORTFOLIO_URL = "https://pepm83-arch.github.io/Portfolio"
 
 # Cabecera realista de navegador para evitar bloqueos 403 / anti-scraping
